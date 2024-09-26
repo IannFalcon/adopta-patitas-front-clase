@@ -20,8 +20,6 @@ public class LoginController {
     @Autowired
     private RestTemplate restTemplate;
 
-    private static final String RUTA_API = "http://localhost:8081/autenticacion/login";
-
     @GetMapping("/inicio")
     public String inicio (Model model){
         LoginModel loginModel =  new LoginModel("00", "", "");
@@ -45,18 +43,19 @@ public class LoginController {
             return "inicio";
         }
 
-        // Creamos el objeto para la solicitud y enviamos los parametros
-        LoginRequestDTO loginRequestDTO = new LoginRequestDTO(tipoDocumento, numeroDocumento, password);
-
         try {
 
+            // Invocamos el servicio de autenticacion
+            String ruta_api = "http://localhost:8081/autenticacion/login";
+
+            // Creamos el objeto para la solicitud y enviamos los parametros
+            LoginRequestDTO loginRequestDTO = new LoginRequestDTO(tipoDocumento, numeroDocumento, password);
+
             // Realizamos la solicitud
-            ResponseEntity<LoginResponseDTO> response = restTemplate.postForEntity(RUTA_API, loginRequestDTO, LoginResponseDTO.class);
+            LoginResponseDTO loginResponseDTO = restTemplate.postForObject(ruta_api, loginRequestDTO, LoginResponseDTO.class);
 
-            // Manejamos la respuesta del servicio
-            LoginResponseDTO loginResponseDTO = response.getBody();
-
-            if(loginResponseDTO != null && "00".equals(loginResponseDTO.codigo())){
+            // Si la respuesta no es null y el codigo es 00
+            if (loginResponseDTO != null && loginResponseDTO.codigo().equals("00")){
 
                 // Autenticacion exitosa, redirigimos a la pagina principal
                 LoginModel loginModel = new LoginModel("00", "", loginResponseDTO.nombreUsuario());
@@ -66,7 +65,7 @@ public class LoginController {
             } else {
 
                 // Autenticacion fallida, redirigimos al login nuevamente
-                LoginModel loginModel = new LoginModel("01", "Error: Credenciales incorrectas", "");
+                LoginModel loginModel = new LoginModel("02", "Error: Credenciales incorrectas", "");
                 model.addAttribute("loginModel", loginModel);
                 return "inicio";
 
